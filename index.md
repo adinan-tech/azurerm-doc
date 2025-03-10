@@ -3,7 +3,7 @@
 ## Provision Autonomous Database with Terraform
 <walkthrough-tutorial-duration duration="30"></walkthrough-tutorial-duration>
 
-[![azure-oci-adbs-quickstart](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure/blob/main/images/azure-oci-adbs-quickstart.png?raw=true)](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure/blob/main/images/azure-oci-adbs-quickstart.png?raw=true)
+[![azure-oci-adbs-quickstart](./images/architecture.png?raw=true)](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure/blob/main/images/architecture.png?raw=true)
 
 In this tutorial, you will 
 
@@ -20,20 +20,34 @@ In this tutorial, you will
 ## Prerequisites
 This tutorial has the following prerequisites:
 - **[Oracle Database@Azure subscription](https://www.oracle.com/cloud/azure/oracle-database-at-azure/)**
-- **[Azure Subscription & Resource Group](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/create-subscription)**
+- **[Azure Subscription](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/create-subscription)**
 - **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)** 
 - **[Terraform 1.5+](https://learn.microsoft.com/en-us/azure/developer/terraform/install-configure)** 
 
 <walkthrough-footnote></walkthrough-footnote>
 
+
+### Using Azure Cloud Shell (recommended) <walkthrough-cloud-shell-icon	></walkthrough-cloud-shell-icon>
+- Run Azure Cloud Shell in either PowerShell or bash mode. You can optionally mount a storage account to persist files between sessions. If persistent storage is enabled, files and configurations (including Terraform state) will be retained across sessions. Otherwise, the session runs in temporary mode, and files will be lost when it ends.
+
+- If you don’t enable storage, the session runs in [**temporary mode**](https://learn.microsoft.com/en-us/azure/cloud-shell/persisting-files), and **all files will be lost when the session ends**, including Terraform state and configurations. 
+
+<walkthrough-footnote>[OCI Multicloud Landing Zone for Azure](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure)</walkthrough-footnote>
+
+
 ### Verify software installation
+- **Azure Cloud Shell** comes with already [pre-installed tools](https://learn.microsoft.com/en-us/azure/cloud-shell/features#tools) e.g. Terraform and Azure CLI. 
+
+  ![Azure Cloud Shell](./images/azure_cloud_shell.png)
+
 - **Azure CLI** 
   ``` sh
-  az version | grep azure-cli
+  az -v | grep azure-cli
   OR in PowerShell
   az version | ConvertFrom-Json | Select-Object @{Name="azure-cli"; Expression={$_.'azure-cli'}} | ConvertTo-Json -Compress
   ```
   You should get among other information "azure-cli": "X.X.X"
+
 - **Terraform**: 
   ``` sh
   terraform -v | grep Terraform
@@ -44,18 +58,9 @@ This tutorial has the following prerequisites:
 <walkthrough-footnote></walkthrough-footnote>
 
 
-### Using Azure Cloud Shell (recommended) <walkthrough-cloud-shell-icon	></walkthrough-cloud-shell-icon>
-- **Trust the repo** Run Azure Cloud Shell in either PowerShell or bash mode. You can optionally mount a storage account to persist files between sessions. If persistent storage is enabled, files and configurations (including Terraform state) will be retained across sessions. Otherwise, the session runs in temporary mode, and files will be lost when it ends.
-- If you don’t enable storage, the session runs in [**temporary mode**](https://learn.microsoft.com/en-us/azure/cloud-shell/persisting-files), and **all files will be lost when the session ends**, including Terraform state and configurations. 
-- **Azure Cloud Shell** comes with already [pre-installed tools](https://learn.microsoft.com/en-us/azure/cloud-shell/features#tools) e.g. Terraform and Azure CLI. 
-  ![Azure Cloud Shell](./images/azure_cloud_shell.png)
-
-
-
-<walkthrough-footnote>[OCI Multicloud Landing Zone for Azure](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure)</walkthrough-footnote>
-
 ## Authentication in Azure CLI & Terraform
 Azure Cloud Shell supports integrated authentication, while a local shell requires explicit authentication setup.
+
 ### Azure Cloud Shell <walkthrough-cloud-shell-icon	></walkthrough-cloud-shell-icon>
 - Azure Cloud Shell automatically authenticates with your Azure account.
 - **If you're using Cloud Shell, you can proceed to next step and skip the below 'Local Shell' section.** 
@@ -78,7 +83,7 @@ For Terraform, configure authentication by setting up the Azure Provider:
 <walkthrough-footnote>[OCI Multicloud Landing Zone for Azure](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure)</walkthrough-footnote>
 
 
-## Azure Subscription & Resource Group
+## Azure Subscription
 - You need an Azure Subscription to provision resources for this tutorial. Follow this [guide](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/create-subscription) to create a subscription if you don’t have one.
 - You can find your current subscription ID in the [Azure Portal](https://portal.azure.com/)
 - Check if your subscription is active and accessible using the following command (replace SUBSCRIPTION_ID with your actual ID): 
@@ -87,40 +92,56 @@ For Terraform, configure authentication by setting up the Azure Provider:
   ``` 
 <walkthrough-footnote>[OCI Multicloud Landing Zone for Azure](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure)</walkthrough-footnote>
 
-## Provision an Autonomous Database + VNet
-Template [azurerm-oci-adbs-quickstart](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure/tree/main/templates/azurerm-oci-adbs-quickstart) will be used.
+## Running the Terraform code - Provision an Autonomous Database + VNet + Resource Group
+### 1. Template [azurerm-oci-adbs-quickstart](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure/tree/main/templates/azurerm-oci-adbs-quickstart) will be used. 
+
+- Please clone it to your Cloud Shell or local shell.
+  ```
+  git clone https://github.com/oci-landing-zones/terraform-oci-multicloud-azure.git
+  ```
+
+- Then cd to the *terraform-oci-multicloud-azure/templates
+/azurerm-oci-adbs-quickstart* directory
+
+  ![Clone azurerm Terraform code repo](./images/clone.png)
+
 <walkthrough-footnote></walkthrough-footnote>
 
-### 1. Customize the sample configuration
-- Create a file *terraform.tfvars* by copying the *terraform.tfvars.template existing file.
-- Open main.az.tf to update `subscription_id` and `client_email` to start with.
-- Review and customize other parameters as needed, save the file when you're done.
-- Set up the admin password using an environment variable as shown below, or you will be prompted when applying Terraform.
-- The admin password must be between 12 and 30 characters long and contain a digit.
-  ``` bash
-  export TF_VAR_admin_password="Your0wnPassword"
-  ``` 
+### 2. Customize the sample configuration
+- Create a file *terraform.tfvars* by copying the *terraform.tfvars.template* existing file into the same directory *azurerm-oci-adbs-quickstart*.
+
+  ![New tfvars file](./images/tfvars.png)
+
+- Open *terraform.tfvars* to update `az_region`, `name` and `admin_password` to start with. The `admin_password` password must be between 12 and 30 characters long, and must contain at least 1 uppercase, 1 lowercase, and 1 numeric character. It cannot contain the double quote symbol or the username 'admin', regardless of casing.
+- Review the other commented variables from the file. They come with default values (defined in *variables.tf*), but you can customize those by uncommenting them and giving them the values as needed.
+- Save the file when you're done.
+
 <walkthrough-footnote></walkthrough-footnote>
-### 2. Initialize Terraform 
-- In Cloud Shell, change directory to where the terraform configuration locate
-  ``` bash
-  cd examples/adbs-minimal
-  ``` 
+### 3. Initialize Terraform 
+- In your shell, make sure you are in the directory where the terraform configuration is located.
+
+  ![Location of the Terraform configuration files](./images/path.png)
+
 - Initialize Terraform with the following command. 
   ``` bash
   terraform init
   ``` 
   You should get `Terraform has been successfully initialized!`. 
-- This prepares the working directory, including accessing state, downloading provider plugins, and fetching modules.
+
+  ![Terraform init output](./images/terraform_init.png)
+  
+  This prepares the working directory, including accessing state, downloading provider plugins, and fetching modules.
 
 <walkthrough-footnote></walkthrough-footnote>
 ### 3. Validate configuration
 - Validate the TF configuration with the following command, which will generate an execution plan for review.
-``` bash
-terraform plan
-``` 
+  ``` bash
+  terraform plan
+  ``` 
 - You should get the following with this template.
-  `Plan: 3 to add, 0 to change, 0 to destroy.`
+  `Plan: 4 to add, 0 to change, 0 to destroy.`
+
+  ![Terraform plan output](./images/plan.png)
 
 <walkthrough-footnote></walkthrough-footnote>
 ### 4. Provision resources 
@@ -135,11 +156,29 @@ terraform plan
 
 <walkthrough-footnote></walkthrough-footnote>
 ### 5. Provision complete!
-- When you're back, you should get something like this: `Apply complete! Resources: 3 added, 0 changed, 0 destroyed.`
-- You will also get Autonomous Database IDs as output:
-  - `adbs_dbid` for [Azure Portal](https://portal.azure.com/)
-  - `adbs_ocid` for [Oracle Cloud](https://cloud.oracle.com/search/?category=resources)
+- When you're back, you should get something like this: 
 
+  `Apply complete! Resources: 4 added, 0 changed, 0 destroyed.`
+
+- Once the infrastructure is provisioned, Terraform will also display something like:
+  ```
+  Outputs:
+
+  adb_id = "ocid1.autonomousdatabase.oc1..aaaaaaa..."
+  adb_private_endpoint = "adb-private.subnet.vcn.oci.oraclecloud.com"
+  adb_service_console_url = "https://adb.region.oraclecloud.com/console"
+  adb_wallet_zip_file = "/path/to/wallet.zip"
+  adw_connection_strings = {
+    "low"    = "adb.region.oraclecloud.com:1521/your_db_low"
+    "medium" = "adb.region.oraclecloud.com:1521/your_db_medium"
+    "high"   = "adb.region.oraclecloud.com:1521/your_db_high"
+  }
+  az_resource_group_name = "my-azure-resource-group"
+  az_subnet_id = "/subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<subnet>"
+  oci_tgw_id = "ocid1.transitgateway.oc1..xxxx"
+  workload_subnet_id = "ocid1.subnet.oc1..yyyy"
+  ```
+  
 <walkthrough-footnote>[OCI Multicloud Landing Zone for Azure](https://github.com/oci-landing-zones/terraform-oci-multicloud-azure)</walkthrough-footnote>
 
 ## Provision a client VM in a new client subnet
